@@ -5,6 +5,9 @@ Sobre o Projeto
 
 O objetivo deste projeto foi criar uma aplicação desktop com uma interface amigável contendo cinco mini-jogos educativos. O sistema funciona como uma versão simplificada da plataforma infantil **GCompris**, permitindo que o usuário escolha os jogos através de um menu principal.
 
+<img width="1191" height="721" alt="image" src="https://github.com/user-attachments/assets/5c9c39ea-dfc4-465e-a1e0-50bef5ef0186" />
+
+
 
 ## Os jogos desenvolvidos foram:
 
