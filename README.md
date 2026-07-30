@@ -1,12 +1,12 @@
-GCompris Simplificado - Jogos Infantis
+# GCompris Simplificado - Jogos Infantis
 
-Projeto prático desenvolvido para o curso Jovem Programador do Senac no módulo Dev com I.A. Este projeto foi desenvolvido para uma avaliação em sala de aula, produzido em torno de 2 horas e meia.
+Projeto prático desenvolvido para o curso **Jovem Programador** do Senac no módulo **Dev com I.A**. Este projeto foi desenvolvido para uma avaliação em sala de aula, produzido em torno de 2 horas e meia.
 Sobre o Projeto
 
-O objetivo deste projeto foi criar uma aplicação desktop com uma interface amigável contendo cinco mini-jogos educativos. O sistema funciona como uma versão simplificada da plataforma infantil GCompris, permitindo que o usuário escolha os jogos através de um menu principal.
+O objetivo deste projeto foi criar uma aplicação desktop com uma interface amigável contendo cinco mini-jogos educativos. O sistema funciona como uma versão simplificada da plataforma infantil **GCompris**, permitindo que o usuário escolha os jogos através de um menu principal.
 
 
-Os jogos desenvolvidos foram:
+## Os jogos desenvolvidos foram:
 
   Futebol: Jogo de arrastar e chutar simulando física básica.
 
@@ -19,7 +19,7 @@ Os jogos desenvolvidos foram:
   Jogo de Damas: Tabuleiro clássico com uma inteligência artificial básica.
 
 
-Principais pontos desenvolvidos:
+## Principais pontos desenvolvidos:
 
   Interface Gráfica (GUI): Construção de telas, botões, painéis e manipulação de objetos gráficos (Canvas).
 
@@ -28,7 +28,7 @@ Principais pontos desenvolvidos:
   Manipulação de Eventos: Interatividade responsiva através de cliques, arrasto do mouse e leitura do teclado.
 
 
-O projeto foi construído puramente com tecnologias e bibliotecas fundamentais:
+## O projeto foi construído puramente com tecnologias e bibliotecas fundamentais:
 
   Python 3
 
