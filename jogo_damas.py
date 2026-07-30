@@ -1,24 +1,30 @@
 import tkinter as tk
+from tkinter import messagebox
 import random
 
 class JogoDamas:
     def __init__(self, janela):
         self.janela = janela
-        self.janela.title("Damas")
-        self.janela.geometry("520x580")
-        self.janela.configure(bg="#FFE0B2")
+        self.janela.title("👑 Jogo de Damas Clássico")
+        self.janela.geometry("520x600")
+        self.janela.configure(bg="#FFF3E0")
         self.janela.resizable(False, False)
 
-        frame_topo = tk.Frame(janela, bg="#FFE0B2")
-        frame_topo.pack(pady=5)
-        tk.Button(frame_topo, text="🔙 Voltar ao Menu", font=("Arial", 10),
-                  bg="#FFC107", command=self.voltar).pack(side=tk.LEFT, padx=5)
-        self.lbl_status = tk.Label(frame_topo, text="Sua vez (brancas)",
-                                   font=("Arial", 14), bg="#FFE0B2", fg="#5D4037")
-        self.lbl_status.pack(side=tk.LEFT, padx=20)
+        # --- BARRA SUPERIOR ---
+        frame_topo = tk.Frame(janela, bg="#FFF3E0")
+        frame_topo.pack(pady=10)
+        
+        tk.Button(frame_topo, text="🔙 Voltar ao Menu", font=("Comic Sans MS", 10, "bold"),
+                  bg="#FF5252", fg="white", activebackground="#FF1744", relief="flat",
+                  cursor="hand2", command=self.voltar).pack(side=tk.LEFT, padx=10, ipadx=5)
+        
+        self.lbl_status = lbl_status = tk.Label(frame_topo, text="Sua vez (Brancas ⚪)",
+                                   font=("Comic Sans MS", 13, "bold"), bg="#FFF3E0", fg="#4E342E")
+        self.lbl_status.pack(side=tk.LEFT, padx=15)
 
-        self.canvas = tk.Canvas(janela, width=480, height=480, bg="#DEB887", highlightthickness=0)
-        self.canvas.pack(pady=10)
+        # --- CANVAS DO TABULEIRO ---
+        self.canvas = tk.Canvas(janela, width=480, height=480, bg="#D7CCC8", highlightthickness=3, highlightbackground="#8D6E63")
+        self.canvas.pack(pady=5)
         self.canvas.bind("<Button-1>", self.on_click)
 
         self.tamanho_casa = 60
@@ -47,12 +53,16 @@ class JogoDamas:
 
     def desenhar_tabuleiro(self):
         self.canvas.delete("all")
+        
+        # Desenha as casas do tabuleiro
         for i in range(8):
             for j in range(8):
                 x1 = j * self.tamanho_casa
                 y1 = i * self.tamanho_casa
                 x2 = x1 + self.tamanho_casa
                 y2 = y1 + self.tamanho_casa
+                
+                # Cores de madeira clássicas para damas
                 cor = "#F5DEB3" if (i + j) % 2 == 0 else "#8B4513"
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=cor, outline="")
 
@@ -60,30 +70,43 @@ class JogoDamas:
                 if peca != 0:
                     self.desenhar_peca(i, j, peca)
 
+        # Destaca a peça selecionada e os movimentos possíveis
         if self.selecionado is not None:
             i, j = self.selecionado
             x = j * self.tamanho_casa + self.tamanho_casa//2
             y = i * self.tamanho_casa + self.tamanho_casa//2
-            self.canvas.create_oval(x-25, y-25, x+25, y+25, outline="yellow", width=3)
+            
+            # Anel de seleção dourado brilhante
+            self.canvas.create_oval(x-26, y-26, x+26, y+26, outline="#FFD700", width=4)
 
+            # Marcações de destino possíveis
             for (li, col) in self.movimentos_possiveis:
                 cx = col * self.tamanho_casa + self.tamanho_casa//2
                 cy = li * self.tamanho_casa + self.tamanho_casa//2
-                self.canvas.create_oval(cx-10, cy-10, cx+10, cy+10, fill="lightgreen", outline="")
+                self.canvas.create_oval(cx-12, cy-12, cx+12, cy+12, fill="#00E676", outline="white", width=2)
 
     def desenhar_peca(self, linha, coluna, tipo):
         x = coluna * self.tamanho_casa + self.tamanho_casa//2
         y = linha * self.tamanho_casa + self.tamanho_casa//2
-        if tipo == 1:
-            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="white", outline="gray", width=2)
-        elif tipo == 2:
-            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="black", outline="gray", width=2)
-        elif tipo == 3:
-            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="white", outline="gold", width=4)
-            self.canvas.create_oval(x-12, y-12, x+12, y+12, fill="white", outline="gold", width=2)
-        elif tipo == 4:
-            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="black", outline="gold", width=4)
-            self.canvas.create_oval(x-12, y-12, x+12, y+12, fill="black", outline="gold", width=2)
+        
+        if tipo == 1: # Peça Branca Normal
+            self.canvas.create_oval(x-22, y-22, x+22, y+22, fill="#BDBDBD", outline="") # Sombra
+            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="#FAFAFA", outline="#E0E0E0", width=2)
+            self.canvas.create_oval(x-12, y-12, x+12, y+12, fill="#EEEEEE", outline="")
+        elif tipo == 2: # Peça Preta Normal
+            self.canvas.create_oval(x-22, y-22, x+22, y+22, fill="#212121", outline="") # Sombra
+            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="#424242", outline="#212121", width=2)
+            self.canvas.create_oval(x-12, y-12, x+12, y+12, fill="#303030", outline="")
+        elif tipo == 3: # Dama Branca (Coroada)
+            self.canvas.create_oval(x-22, y-22, x+22, y+22, fill="#E0E0E0", outline="")
+            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="#FAFAFA", outline="#FFD700", width=4)
+            # Símbolo da coroa / Dama
+            self.canvas.create_text(x, y, text="👑", font=("Arial", 16))
+        elif tipo == 4: # Dama Preta (Coroada)
+            self.canvas.create_oval(x-22, y-22, x+22, y+22, fill="#212121", outline="")
+            self.canvas.create_oval(x-20, y-20, x+20, y+20, fill="#424242", outline="#FFD700", width=4)
+            # Símbolo da coroa / Dama
+            self.canvas.create_text(x, y, text="👑", font=("Arial", 16))
 
     def on_click(self, event):
         if self.jogo_encerrado or not self.turno_do_jogador:
@@ -108,8 +131,8 @@ class JogoDamas:
                 self.verificar_fim_de_jogo()
                 if not self.jogo_encerrado:
                     self.turno_do_jogador = False
-                    self.lbl_status.config(text="Vez da IA (pretas)...")
-                    self.janela.after(300, self.jogada_ia)
+                    self.lbl_status.config(text="Vez da IA (Pretas ⚫)...", fg="#C62828")
+                    self.janela.after(400, self.jogada_ia)
             else:
                 if self.tabuleiro[linha][coluna] in (1, 3):
                     self.selecionado = (linha, coluna)
@@ -164,6 +187,7 @@ class JogoDamas:
             meio_col = (col_orig + col_dest) // 2
             self.tabuleiro[meio_lin][meio_col] = 0
 
+        # Promoção a Dama
         if peca == 1 and lin_dest == 0:
             self.tabuleiro[lin_dest][col_dest] = 3
         elif peca == 2 and lin_dest == 7:
@@ -173,7 +197,6 @@ class JogoDamas:
         if self.jogo_encerrado:
             return
 
-        # Coleta movimentos e capturas
         movimentos = []
         capturas = []
         for i in range(8):
@@ -187,7 +210,6 @@ class JogoDamas:
                             movimentos.append((i, j, d[0], d[1]))
 
         if capturas:
-            # Escolhe aleatoriamente uma captura
             escolha = random.choice(capturas)
             origem = (escolha[0], escolha[1])
             destino = (escolha[2], escolha[3])
@@ -196,7 +218,7 @@ class JogoDamas:
             origem = (escolha[0], escolha[1])
             destino = (escolha[2], escolha[3])
         else:
-            self.fim_de_jogo("Você venceu! IA não pode mais mover.")
+            self.fim_de_jogo("🎉 Você venceu! A IA ficou sem movimentos.")
             return
 
         self.executar_movimento(origem, destino)
@@ -205,9 +227,9 @@ class JogoDamas:
 
         if not self.jogo_encerrado:
             self.turno_do_jogador = True
-            self.lbl_status.config(text="Sua vez (brancas)")
+            self.lbl_status.config(text="Sua vez (Brancas ⚪)", fg="#4E342E")
             if not self.tem_movimentos_validos(1):
-                self.fim_de_jogo("IA venceu! Você não pode mais mover.")
+                self.fim_de_jogo("💀 A IA venceu! Você não tem mais movimentos válidos.")
 
     def tem_movimentos_validos(self, time):
         for i in range(8):
@@ -222,11 +244,11 @@ class JogoDamas:
         tem_brancas = any(1 in row or 3 in row for row in self.tabuleiro)
         tem_pretas = any(2 in row or 4 in row for row in self.tabuleiro)
         if not tem_brancas:
-            self.fim_de_jogo("IA venceu! Você não tem mais peças.")
+            self.fim_de_jogo("💀 A IA venceu! Você ficou sem peças.")
         elif not tem_pretas:
-            self.fim_de_jogo("Você venceu! IA não tem mais peças.")
+            self.fim_de_jogo("🎉 Você venceu! A IA ficou sem peças.")
 
     def fim_de_jogo(self, mensagem):
         self.jogo_encerrado = True
-        self.lbl_status.config(text=mensagem)
-        tk.messagebox.showinfo("Fim de jogo", mensagem)
+        self.lbl_status.config(text=mensagem, fg="#D32F2F")
+        messagebox.showinfo("Fim de Jogo", mensagem)

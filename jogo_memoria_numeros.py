@@ -5,30 +5,32 @@ class JogoMemoriaNumeros:
     def __init__(self, janela):
         self.janela = janela
         self.janela.title("Jogo da Memória - Números e Quantidades")
-        self.janela.geometry("800x650")
+        self.janela.geometry("800x680")
         self.janela.configure(bg="#E8F5E9")
         self.janela.resizable(False, False)
 
-        # Frame superior
+        # --- BARRA SUPERIOR ---
         frame_topo = tk.Frame(janela, bg="#E8F5E9")
         frame_topo.pack(pady=10)
-        tk.Button(frame_topo, text="🔙 Voltar ao Menu", font=("Arial", 10),
-                  bg="#FFC107", command=self.voltar).pack(side=tk.LEFT, padx=5)
-        self.lbl_mensagem = tk.Label(frame_topo, text="Encontre os pares: número e quantidade",
-                                     font=("Arial", 14), bg="#E8F5E9", fg="#2E7D32")
+        
+        tk.Button(frame_topo, text="🔙 Voltar ao Menu", font=("Comic Sans MS", 10, "bold"),
+                  bg="#FF5252", fg="white", activebackground="#FF1744", relief="flat",
+                  cursor="hand2", command=self.voltar).pack(side=tk.LEFT, padx=10, ipadx=5)
+        
+        self.lbl_mensagem = tk.Label(frame_topo, text="Encontre os pares: o número e suas borboletas 🦋",
+                                     font=("Comic Sans MS", 14, "bold"), bg="#E8F5E9", fg="#2E7D32")
         self.lbl_mensagem.pack(side=tk.LEFT, padx=20)
 
-        # Frame para as cartas
+        # Frame para as cartas (Grid 3x4 = 12 cartas)
         self.frame_cartas = tk.Frame(janela, bg="#E8F5E9")
-        self.frame_cartas.pack(pady=20)
+        self.frame_cartas.pack(pady=15)
 
         self.borboleta = "🦋"
 
         # Gera pares de 1 a 6
         self.pares_base = []
         for i in range(1, 7):
-            qtd_formatada = self.formatar_quantidade(i)
-            self.pares_base.append((str(i), qtd_formatada))
+            self.pares_base.append((str(i), i)) # Guardamos o número e a contagem real
 
         self.cartas = []
         self.valores = []
@@ -36,16 +38,22 @@ class JogoMemoriaNumeros:
         self.pares_encontrados = 0
         self.carta_virada_idx = None
         self.aguardando = False
+        
+        # Controle de animação de virada
+        self.animando_idx = None
+        self.etapa_animacao = 0
 
         self.criar_tabuleiro()
         self.janela.protocol("WM_DELETE_WINDOW", self.voltar)
 
     def formatar_quantidade(self, n):
-        """Organiza as borboletas em até 2 por linha, como um dado."""
+        """Organiza as borboletas perfeitamente em linhas para caber na carta."""
         emojis = [self.borboleta] * n
         linhas = []
-        for i in range(0, n, 2):
-            linha = ' '.join(emojis[i:i+2])
+        # Agrupa em até 3 por linha dependendo do tamanho para ficar harmonioso
+        limite_por_linha = 3 if n > 4 else 2
+        for i in range(0, n, limite_por_linha):
+            linha = ' '.join(emojis[i:i+limite_por_linha])
             linhas.append(linha)
         return '\n'.join(linhas)
 
@@ -65,74 +73,102 @@ class JogoMemoriaNumeros:
 
         valores_embaralhar = []
         for num, qtd in self.pares_base:
-            valores_embaralhar.append(num)
-            valores_embaralhar.append(qtd)
+            valores_embaralhar.append(("numero", num))
+            valores_embaralhar.append(("qtd", qtd))
+            
         random.shuffle(valores_embaralhar)
 
         self.valores = valores_embaralhar
         self.viradas = [False] * len(self.valores)
 
-        # Botões maiores para comportar múltiplas linhas
-        for i, valor in enumerate(self.valores):
-            btn = tk.Button(self.frame_cartas, text="?", font=("Arial", 18, "bold"),
-                            width=8, height=4,   # altura extra para linhas
+        # Criação dos botões em grid de 3 linhas por 4 colunas
+        for i, (tipo, val) in enumerate(self.valores):
+            btn = tk.Button(self.frame_cartas, text="❓", font=("Comic Sans MS", 22, "bold"),
+                            width=6, height=3,  
                             bg="#81C784", fg="white", activebackground="#66BB6A",
-                            relief="raised", bd=4,
-                            command=lambda idx=i: self.virar_carta(idx))
-            btn.grid(row=i // 4, column=i % 4, padx=10, pady=10)
+                            relief="raised", bd=4, cursor="hand2",
+                            command=lambda idx=i: self.clicar_carta(idx))
+            btn.grid(row=i // 4, column=i % 4, padx=12, pady=12)
             self.cartas.append(btn)
 
-        self.lbl_mensagem.config(text="Encontre os pares: número e quantidade")
-        # Remove botão "Jogar Novamente" se existir
+        self.lbl_mensagem.config(text="Encontre os pares: o número e suas borboletas 🦋", fg="#2E7D32")
+        
+        # Remove botão "Jogar Novamente" se já existir
         for widget in self.janela.winfo_children():
-            if isinstance(widget, tk.Button) and widget.cget("text") == "Jogar Novamente":
+            if isinstance(widget, tk.Button) and widget.cget("text") == "Jogar Novamente 🔄":
                 widget.destroy()
 
-    def virar_carta(self, idx):
-        if self.aguardando:
-            return
-        if self.viradas[idx]:
-            return
+    def clicar_carta(self, idx):
+        if self.aguardando: return
+        if self.viradas[idx]: return
+        if self.carta_virada_idx == idx: return
 
-        if self.carta_virada_idx is not None and self.carta_virada_idx != idx:
-            self.mostrar_carta(idx)
-            self.aguardando = True
-            self.janela.after(800, self.verificar_par, self.carta_virada_idx, idx)
-            self.carta_virada_idx = None
+        # Inicia a animação de virar para mostrar a carta
+        self.animar_virada(idx, "mostrar", 0)
+
+    def animar_virada(self, idx, acao, passo):
+        """Cria o efeito visual de rotação 3D encolhendo e expandindo o botão"""
+        larguras = [6, 4, 2, 1, 2, 4, 6] # Simula o giro horizontal
+        
+        if passo < len(larguras):
+            self.cartas[idx].config(width=larguras[passo])
+            
+            # Na metade do giro, altera o texto/conteúdo
+            if passo == 3:
+                if acao == "mostrar":
+                    tipo, val = self.valores[idx]
+                    if tipo == "numero":
+                        self.cartas[idx].config(text=str(val), font=("Comic Sans MS", 26, "bold"), bg="#FFF59D", fg="#E65100")
+                    else:
+                        texto_qtd = self.formatar_quantidade(val)
+                        # Fonte ajustada para caber perfeitamente os emojis
+                        self.cartas[idx].config(text=texto_qtd, font=("Comic Sans MS", 14, "bold"), bg="#E1F5FE", fg="#01579B")
+                else:
+                    self.cartas[idx].config(text="❓", font=("Comic Sans MS", 22, "bold"), bg="#81C784", fg="white")
+            
+            self.janela.after(25, lambda: self.animar_virada(idx, acao, passo + 1))
         else:
-            if self.carta_virada_idx is not None:
-                pass
+            # Fim da animação desta carta
+            if acao == "mostrar":
+                self.processar_carta_revelada(idx)
+
+    def processar_carta_revelada(self, idx):
+        if self.carta_virada_idx is None:
             self.carta_virada_idx = idx
-            self.mostrar_carta(idx)
-
-    def mostrar_carta(self, idx):
-        valor = self.valores[idx]
-        self.cartas[idx].config(text=valor, bg="#FFF176", fg="black")
-
-    def esconder_carta(self, idx):
-        self.cartas[idx].config(text="?", bg="#81C784", fg="white")
-
-    def verificar_par(self, idx1, idx2):
-        valor1 = self.valores[idx1]
-        valor2 = self.valores[idx2]
-        par_encontrado = False
-        for num, qtd in self.pares_base:
-            if (valor1 == num and valor2 == qtd) or (valor1 == qtd and valor2 == num):
-                par_encontrado = True
-                break
-
-        if par_encontrado:
-            self.viradas[idx1] = True
-            self.viradas[idx2] = True
-            self.cartas[idx1].config(bg="#A5D6A7", state="disabled", relief="sunken")
-            self.cartas[idx2].config(bg="#A5D6A7", state="disabled", relief="sunken")
-            self.pares_encontrados += 1
-            if self.pares_encontrados == len(self.pares_base):
-                self.lbl_mensagem.config(text="🎉 Parabéns! Você encontrou todos os pares!")
-                tk.Button(self.janela, text="Jogar Novamente", font=("Arial", 12),
-                          bg="#4CAF50", fg="white", command=self.criar_tabuleiro).pack(pady=10)
         else:
-            self.esconder_carta(idx1)
-            self.esconder_carta(idx2)
+            idx1 = self.carta_virada_idx
+            idx2 = idx
+            self.carta_virada_idx = None
+            self.aguardando = True
 
+            # Verifica se formam par
+            if self.verificar_par_logica(idx1, idx2):
+                self.viradas[idx1] = True
+                self.viradas[idx2] = True
+                self.cartas[idx1].config(bg="#C8E6C9", state="disabled", relief="sunken")
+                self.cartas[idx2].config(bg="#C8E6C9", state="disabled", relief="sunken")
+                self.pares_encontrados += 1
+                self.aguardando = False
+
+                if self.pares_encontrados == len(self.pares_base):
+                    self.lbl_mensagem.config(text="🎉 Parabéns! Você encontrou todos os pares!", fg="#1B5E20")
+                    tk.Button(self.janela, text="Jogar Novamente 🔄", font=("Comic Sans MS", 13, "bold"),
+                              bg="#4CAF50", fg="white", activebackground="#388E3C", relief="raised",
+                              cursor="hand2", command=self.criar_tabuleiro).pack(pady=5)
+            else:
+                # Se errar, espera um instante e desvira as duas com animação
+                self.janela.after(900, lambda: self.esconder_par(idx1, idx2))
+
+    def verificar_par_logica(self, idx1, idx2):
+        tipo1, val1 = self.valores[idx1]
+        tipo2, val2 = self.valores[idx2]
+        
+        # Um deve ser número e o outro quantidade, e os valores numéricos devem coincidir
+        if tipo1 != tipo2 and str(val1) == str(val2):
+            return True
+        return False
+
+    def esconder_par(self, idx1, idx2):
+        self.animar_virada(idx1, "esconder", 0)
+        self.animar_virada(idx2, "esconder", 0)
         self.aguardando = False
